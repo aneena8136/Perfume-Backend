@@ -1,0 +1,66 @@
+router.post('/cart/add', async (req, res) => {
+    try {
+      const { userId, perfumeId } = req.body;
+  
+      // Step 1: Find the perfume by its ID in the database
+      const perfume = await Perfume.findById(perfumeId);
+  
+      // If the perfume doesn't exist, return a 404 error
+      if (!perfume) {
+        return res.status(404).json({ error: 'Perfume not found' });
+      }
+  
+      // Step 2: Find the user's cart
+      let cart = await Cart.findOne({ userId });
+  
+      // If the cart doesn't exist, create a new one
+      if (!cart) {
+        cart = new Cart({ userId, perfumes: [] });
+      }
+  
+      // Step 3: Add the perfume to the cart
+      cart.perfumes.push({ perfumeId });
+  
+      // Step 4: Calculate the total price of the perfumes in the cart
+      const totalPrice = cart.perfumes.reduce((total, item) => {
+        // Find the perfume by its ID
+        const perfumeInCart = perfume; // In this case, we know the perfume is the same for each item
+        return total + perfumeInCart.price;
+      }, 0);
+  
+      // Step 5: Apply the discount logic
+      let discount = 0;
+  
+      // If the user has purchased 5 perfumes, apply a 10% discount
+      if (cart.perfumes.length === 5) {
+        discount = 0.10; // 10% discount
+      }
+      // If the user has purchased 6 perfumes, apply a 15% discount
+      else if (cart.perfumes.length === 6) {
+        discount = 0.15; // 15% discount
+      }
+  
+      // Step 6: Calculate the discounted price
+      const discountedPrice = totalPrice * (1 - discount); // Apply the discount
+  
+      // Step 7: Add the total price and discount information to the cart
+      cart.totalPrice = totalPrice;
+      cart.discount = discount * 100;  // Store discount as percentage (10% or 15%)
+      cart.finalPrice = discountedPrice;
+  
+      // Step 8: Save the updated cart to the database
+      await cart.save();
+  
+      // Step 9: Return the updated cart with discount information
+      res.json({
+        cart,
+        message: `You have a ${discount * 100}% discount applied!`,
+      });
+  
+    } catch (err) {
+      // Handle errors by sending a server error response
+      console.error(err);
+      res.status(500).json({ error: 'Something went wrong' });
+    }
+  });
+  

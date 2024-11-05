@@ -7,6 +7,7 @@ require('dotenv').config();
 
 const authRoutes= require('./routes/auth');
 const perfumeRoutes = require('./routes/perfume');
+const orderRoutes = require('./routes/order');
 
 const app = express();
 const PORT= process.env.PORT || 5000;
@@ -25,6 +26,7 @@ mongoose.connect(process.env.MONGODB_URI)
 //routes
 app.use('/api/auth', authRoutes);
 app.use('/api/perfume',perfumeRoutes);
+app.use('/api/cart',orderRoutes);
 
 // error handling middleware
 app.use((err, req, res, next) => {
